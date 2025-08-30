@@ -44,6 +44,7 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: true
         propagateComposedEvents: true
+        acceptedButtons: Qt.NoButton
         onEntered: groupBoxRoot.hoveredIntern = true
         onExited: groupBoxRoot.hoveredIntern = false
     }

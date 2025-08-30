@@ -1,6 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
+import QtQuick.Layouts 2.15
 import "components"
 
 Rectangle {
@@ -11,6 +11,30 @@ Rectangle {
 
     // Scale factor relative to base design (1920x1080)
     property real scaleFactor: Math.min(width / 1920, height / 1080)
+
+    Connections {
+        target: sddm
+
+        onLoginSucceeded: {
+            popupMessage.text = "Login successful!"
+            overlay.visible = true
+            overlay.opacity = 0.5
+        }
+
+        onLoginFailed: {
+            passField.text = ""
+            popupMessage.text = "Login failed, please try again."
+            overlay.visible = true
+            overlay.opacity = 0.5
+        }
+
+        onInformationMessage: {
+            popupMessage.text = message
+            overlay.visible = true
+            overlay.opacity = 0.5
+        }
+    }
+
 
     // --- Outer pink outline ---
     Rectangle {
@@ -86,6 +110,7 @@ Rectangle {
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !overlay.visible
                             propagateComposedEvents: true
                             acceptedButtons: Qt.NoButton
                             onEntered: loginGroup.hovered = true
@@ -112,27 +137,31 @@ Rectangle {
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: !overlay.visible
                             propagateComposedEvents: true
                             acceptedButtons: Qt.NoButton
                             onEntered: loginGroup.hovered = true
                             onExited: loginGroup.hovered = false
                         }
+
+                        Keys.onReturnPressed: {
+                            if (!overlay.visible) sddm.login(userComboBox.currentText, passField.text, session.currentIndex)
+                        }
                     }
 
                     CustomButton {
                         id: loginButton
-                        scaleFactor: root.scaleFactor
                         text: "Login"
-                        font.pixelSize: 16 * root.scaleFactor
                         anchors.horizontalCenter: parent.horizontalCenter
-                        implicitWidth: 120 * root.scaleFactor
-                        implicitHeight: 40 * root.scaleFactor
-
-                        onClicked: sddm.login(userComboBox.text, passField.text, session.currentIndex)
+                        scaleFactor: root.scaleFactor
+                        onClicked: {
+                            if (!overlay.visible) sddm.login(userComboBox.currentText, passField.text, session.currentIndex)
+                        }
 
                         MouseArea {
                             anchors.fill: parent
-                            hoverEnabled: true
+                            hoverEnabled: !overlay.visible
+                            enabled: !overlay.visible
                             propagateComposedEvents: true
                             acceptedButtons: Qt.NoButton
                             onEntered: loginGroup.hovered = true
@@ -162,6 +191,7 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
+                        enabled: !overlay.visible
                         propagateComposedEvents: true
                         acceptedButtons: Qt.NoButton
                         onEntered: sessionGroup.hovered = true
@@ -187,11 +217,14 @@ Rectangle {
                     CustomButton {
                         text: "Reboot"
                         scaleFactor: root.scaleFactor
-                        onClicked: sddm.reboot()
+                        onClicked: {
+                            if (!overlay.visible) sddm.reboot()
+                        }
 
                         MouseArea {
                             anchors.fill: parent
-                            hoverEnabled: true
+                            hoverEnabled: !overlay.visible
+                            enabled: !overlay.visible
                             propagateComposedEvents: true
                             acceptedButtons: Qt.NoButton
                             onEntered: powerGroup.hovered = true
@@ -202,11 +235,14 @@ Rectangle {
                     CustomButton {
                         text: "Shutdown"
                         scaleFactor: root.scaleFactor
-                        onClicked: sddm.powerOff()
+                        onClicked: {
+                            if (!overlay.visible) sddm.powerOff()
+                        }
 
                         MouseArea {
                             anchors.fill: parent
-                            hoverEnabled: true
+                            hoverEnabled: !overlay.visible
+                            enabled: !overlay.visible
                             propagateComposedEvents: true
                             acceptedButtons: Qt.NoButton
                             onEntered: powerGroup.hovered = true
@@ -249,6 +285,86 @@ Rectangle {
                 onTriggered: {
                     currentTime.text = Qt.formatTime(new Date(), "HH:mm:ss")
                     currentDate.text = Qt.formatDate(new Date(), "dddd, dd. MMMM yyyy")
+                }
+            }
+        }
+
+        // --- Overlay Popup ---
+        Item {
+            anchors.centerIn: parent
+            z: 997
+
+            Rectangle {
+                id: overlay
+                width: Screen.width
+                height: Screen.height
+                color: "black"
+                opacity: 0.0
+                visible: false
+                anchors.centerIn: parent
+                z: 998  // ensure it sits on top
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                // When visible becomes false, also reset opacity
+                onVisibleChanged: {
+                    if (!visible) {
+                        opacity = 0.0
+                        popup.opacity = 0.0
+                    }
+
+                    if (visible) popup.opacity = 1.0
+                }
+
+                // Block all input behind popup
+                MouseArea {
+                    anchors.fill: overlay
+                    enabled: overlay.visible
+                    hoverEnabled: overlay.visible
+                    preventStealing: true
+                }
+            }
+
+            // Popup container
+            Rectangle {
+                id: popup
+                width: 400 * root.scaleFactor
+                height: 200 * root.scaleFactor
+                color: "#353e4c"
+                radius: 6 * root.scaleFactor
+                anchors.centerIn: overlay
+                border.width: 2 * root.scaleFactor
+                border.color: "#ff69b4"
+                focus: overlay.visible // ensure it can capture key events
+                opacity: 0.0
+                z: 999
+
+                Keys.onReturnPressed: {
+                    overlay.visible = false
+                }
+
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 12 * root.scaleFactor
+
+                    Text {
+                        id: popupMessage
+                        text: ""
+                        font.pixelSize: 16 * root.scaleFactor
+                        font.family: "DM Mono"
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        width: parent.width * 0.9
+                    }
+
+                    CustomButton {
+                        scaleFactor: root.scaleFactor
+                        text: "OK"
+                        onClicked: {
+                            overlay.opacity = 0.0
+                            overlay.visible = false
+                        }
+                    }
                 }
             }
         }
