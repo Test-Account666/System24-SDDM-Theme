@@ -1,0 +1,15 @@
+[SddmGreeterTheme]
+Name=system24-sddm-qt5
+Comment=SDDM Theme based on the system24 Discord theme
+Type=sddm-theme
+Author=TestAccount666
+Version=1.1.0
+Website=https://github.com/Test-Account666/System24-SDDM-Theme/
+Email=
+License=MIT
+MainScript=Main.qml
+Screenshot=screenshots/screenshot1.png
+Theme-Id=system24-sddm
+Theme-API=2.0
+QtVersion=5
+ConfigFile=theme.conf
