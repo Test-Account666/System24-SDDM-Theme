@@ -127,6 +127,7 @@ Rectangle {
                         font.pixelSize: 16 * root.scaleFactor
                         width: parent.width
                         height: 40 * root.scaleFactor
+                        placeholderTextColor: "#999999"
                         color: "#ffffff"
                         background: Rectangle {
                             color: "#353e4c"
@@ -134,6 +135,8 @@ Rectangle {
                             border.color: (passField.focus || passField.hovered) ? "#ff69b4" : "#484f5d"
                             radius: 2 * root.scaleFactor
                         }
+
+                        Component.onCompleted: passField.forceActiveFocus()
 
                         MouseArea {
                             anchors.fill: parent
@@ -341,6 +344,7 @@ Rectangle {
 
                 Keys.onReturnPressed: {
                     overlay.visible = false
+                    passField.forceActiveFocus()
                 }
 
                 Column {
@@ -362,8 +366,8 @@ Rectangle {
                         scaleFactor: root.scaleFactor
                         text: "OK"
                         onClicked: {
-                            overlay.opacity = 0.0
                             overlay.visible = false
+                            passField.forceActiveFocus()
                         }
                     }
                 }
